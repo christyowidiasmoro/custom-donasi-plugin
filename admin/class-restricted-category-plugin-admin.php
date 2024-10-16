@@ -43,21 +43,26 @@ if ( !class_exists( 'Restricted_Category_Plugin_Admin' ) ) {
             );
         }
 
-      // Method to render the admin settings page
-      public function admin_settings_page() {
-          ?>
-          <div class="wrap">
-              <h1>Customize Restricted Categories</h1>
-              <form method="post" action="options.php">
-                  <?php
-                  settings_fields( 'donasi-settings-group' );
-                  do_settings_sections( 'donasi-settings' );
-                  submit_button();
-                  ?>
-              </form>
-          </div>
-          <?php
-      }
+		// Method to render the admin settings page
+		public function admin_settings_page() {
+			?>
+			<div class="wrap">
+				<h1>Customize Restricted Categories</h1>
+				<form method="post" action="options.php">
+					<?php
+					settings_fields( 'donasi-settings-group' );
+					do_settings_sections( 'donasi-settings' );
+					submit_button();
+					?>
+				</form>
+				<form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
+					<input type="hidden" name="action" value="reset_plugin_settings">
+					<?php wp_nonce_field('reset_plugin_settings_nonce', 'reset_plugin_settings_nonce_field'); ?>
+					<button type="submit" class="button button-secondary">Reset Restricted Category Groups</button>
+				</form>
+			</div>
+			<?php
+		}
       
       // Method to register settings
       public function register_settings() {
@@ -137,5 +142,20 @@ if ( !class_exists( 'Restricted_Category_Plugin_Admin' ) ) {
 			return ob_get_clean();
 		}
 
+        // Method to handle the reset action
+        public function reset_plugin_settings() {
+            // Check nonce for security
+            if (!isset($_POST['reset_plugin_settings_nonce_field']) || !wp_verify_nonce($_POST['reset_plugin_settings_nonce_field'], 'reset_plugin_settings_nonce')) {
+                wp_die('Security check failed');
+            }
+
+            // Reset the setting
+            update_option('restricted_category_groups', []);
+
+            // Redirect back to the settings page
+            wp_redirect(admin_url('admin.php?page=donasi-settings'));
+            exit;
+        }
+    
     }
 }
