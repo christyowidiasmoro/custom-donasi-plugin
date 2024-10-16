@@ -19,12 +19,12 @@ define( 'CUSTOM_DONASI_PLUGIN_PATH', plugin_dir_path( __FILE__ ) );
 define( 'CUSTOM_DONASI_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 
 // Include required files
-require_once CUSTOM_DONASI_PLUGIN_PATH . 'includes/class-custom-donasi-plugin.php';
+require_once CUSTOM_DONASI_PLUGIN_PATH . 'includes/class-restricted-category-plugin.php';
 
 // Initialize the plugin
 function custom_donasi_plugin_init() {
-    $custom_donasi_plugin = new Custom_Donasi_Plugin();
-    $custom_donasi_plugin->run();
+    $restricted_category_plugin = new Restricted_Category_Plugin();
+    $restricted_category_plugin->run();
 }
 add_action( 'plugins_loaded', 'custom_donasi_plugin_init' );
 
