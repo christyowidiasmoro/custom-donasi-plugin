@@ -33,31 +33,34 @@ if ( !class_exists( 'Custom_Donasi_Plugin' ) ) {
         }
 
         public function restrict_cart_multiple_categories() {
-            // Get restricted categories from admin settings
-            $restricted_categories = get_option( 'restricted_categories', [] );
+            // Get restricted category groups from admin settings
+            $restricted_groups = get_option( 'restricted_category_groups', [] );
         
-            if ( empty( $restricted_categories ) ) {
-                return;
+            if ( empty( $restricted_groups ) ) {
+                return; // No groups to restrict
             }
         
-            // Get product categories in the current cart
-            $categories_in_cart = array();
+            // Get all categories in the current cart
+            $categories_in_cart = [];
         
             foreach ( WC()->cart->get_cart() as $cart_item ) {
                 $product_id = $cart_item['product_id'];
-                $product_categories = wp_get_post_terms( $product_id, 'product_cat', array( 'fields' => 'slugs' ) );
+                $product_categories = wp_get_post_terms( $product_id, 'product_cat', [ 'fields' => 'slugs' ] );
                 $categories_in_cart = array_merge( $categories_in_cart, $product_categories );
             }
         
             // Get unique categories
-            $unique_categories = array_intersect( array_unique( $categories_in_cart ), $restricted_categories );
+            $unique_categories_in_cart = array_unique( $categories_in_cart );
         
-            // Check if more than one restricted category is in the cart
-            if ( count( $unique_categories ) > 1 ) {
-                wc_add_notice( 'You cannot add products from multiple restricted categories to the cart. Please remove one to proceed.', 'error' );
+            // Check if any restricted group is violated
+            foreach ( $restricted_groups as $group ) {
+                $categories_in_group = array_intersect( $unique_categories_in_cart, $group );
+                if ( count( $categories_in_group ) > 1 ) {
+                    wc_add_notice( 'You cannot add products from multiple categories within the same restricted group. Please remove one to proceed.', 'error' );
+                    return;
+                }
             }
-        }
-        
+        }                
 
         public function add_admin_menu() {
             add_menu_page(
@@ -87,8 +90,8 @@ if ( !class_exists( 'Custom_Donasi_Plugin' ) ) {
         }
         
         public function register_settings() {
-            // Register the setting
-            register_setting( 'donasi-settings-group', 'restricted_categories' );
+            // Register the new setting for restricted category groups
+            register_setting( 'donasi-settings-group', 'restricted_category_groups' );
         
             // Add a section in the admin settings page
             add_settings_section(
@@ -97,39 +100,67 @@ if ( !class_exists( 'Custom_Donasi_Plugin' ) ) {
                 null,
                 'donasi-settings'
             );
-        
-            // Add the settings field to allow category selection
+
+            // Add the settings field for restricted category groups
             add_settings_field(
-                'restricted_categories',
-                'Restricted Categories',
+                'restricted_category_groups',
+                'Restricted Category Groups',
                 [ $this, 'restricted_categories_callback' ],
                 'donasi-settings',
                 'donasi-settings-section'
             );
-        }        
+        }
 
         public function restricted_categories_callback() {
-            $selected_categories = get_option( 'restricted_categories', [] );
+            $restricted_groups = get_option( 'restricted_category_groups', [] );
             $categories = get_terms( [
                 'taxonomy'   => 'product_cat',
                 'hide_empty' => false,
             ] );
         
-            if ( !empty( $categories ) ) {
-                foreach ( $categories as $category ) {
-                    ?>
-                    <label>
-                        <input type="checkbox" name="restricted_categories[]" value="<?php echo esc_attr( $category->slug ); ?>"
-                        <?php echo in_array( $category->slug, (array) $selected_categories ) ? 'checked' : ''; ?>>
-                        <?php echo esc_html( $category->name ); ?>
-                    </label><br/>
-                    <?php
+            echo '<div id="restricted-category-groups">';
+        
+            if ( !empty( $restricted_groups ) ) {
+                foreach ( $restricted_groups as $index => $group ) {
+                    echo '<div class="restricted-group" data-index="' . esc_attr( $index ) . '">';
+                    echo '<h4>Group ' . ( (int) $index + 1 ) . '</h4>';
+                    echo $this->render_category_group( $group, $categories, $index );
+                    echo '<button type="button" class="button delete-group">Delete Group</button>';
+                    echo '</div>';
                 }
-            } else {
-                echo '<p>No categories found.</p>';
             }
+        
+            echo '</div>';
+        
+            // Button to add new groups
+            echo '<button type="button" class="button" id="add-group">Add Group</button>';
+            echo '<script>
+                var groupIndex = ' . count($restricted_groups) . ';
+                jQuery("#add-group").click(function() {
+                    groupIndex++;
+                    jQuery("#restricted-category-groups").append(`<div class="restricted-group" data-index="${groupIndex}"><h4>Group ${groupIndex}</h4>` + ' . json_encode($this->render_category_group([], $categories, 'new')) . ' + `<button type="button" class="button delete-group">Delete Group</button></div>`);
+                });
+                jQuery(document).on("click", ".delete-group", function() {
+                    jQuery(this).closest(".restricted-group").remove();
+                });
+            </script>';
+        }
+
+        public function render_category_group( $group, $categories, $index ) {
+            ob_start();
+            foreach ( $categories as $category ) {
+                ?>
+                <label>
+                    <input type="checkbox" name="restricted_category_groups[<?php echo esc_attr( $index ); ?>][]"
+                        value="<?php echo esc_attr( $category->slug ); ?>"
+                        <?php echo in_array( $category->slug, $group ) ? 'checked' : ''; ?>>
+                    <?php echo esc_html( $category->name ); ?>
+                </label><br/>
+                <?php
+            }
+            return ob_get_clean();
         }
         
-        
+                
     }
 }
