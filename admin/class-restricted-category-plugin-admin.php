@@ -1,0 +1,141 @@
+<?php
+
+// Check if the class 'Restricted_Category_Plugin_Admin' does not already exist
+if ( !class_exists( 'Restricted_Category_Plugin_Admin' ) ) {
+    // Define the 'Restricted_Category_Plugin_Admin' class
+    class Restricted_Category_Plugin_Admin {
+
+        // Constructor method
+        public function __construct() {
+            // Constructor code here
+        }
+
+        // Method to run the admin plugin
+        public function run() {
+            // Hook for admin customizations
+            add_action( 'admin_enqueue_scripts', [ $this, 'enqueue_admin_scripts' ] );
+
+            // Hook to add admin menu
+            add_action( 'admin_menu', [ $this, 'add_admin_menu' ] );
+
+            // Hook to register settings
+            add_action( 'admin_init', [ $this, 'register_settings' ] );
+
+            // Hook to handle reset settings action
+            add_action( 'admin_post_reset_plugin_settings', [ $this, 'reset_plugin_settings' ] );
+        }
+
+        // Method to enqueue admin panel styles and scripts
+        public function enqueue_admin_scripts() {
+            wp_enqueue_style( 'restricted-category-admin-style', plugin_dir_url( __FILE__ ) . '../assets/css/admin-style.css' );
+            wp_enqueue_script( 'restricted-category-admin-script', plugin_dir_url( __FILE__ ) . '../assets/js/admin-script.js', [], false, true );
+        }
+        // Method to add admin menu
+        public function add_admin_menu() {
+            add_menu_page(
+                'Restricted Categories',         // Page title
+                'Donasi Settings',               // Menu title
+                'manage_options',                // Capability
+                'donasi-settings',               // Menu slug
+                [ $this, 'admin_settings_page' ], // Callback function
+                'dashicons-admin-generic',       // Icon
+                60                               // Position
+            );
+        }
+
+      // Method to render the admin settings page
+      public function admin_settings_page() {
+          ?>
+          <div class="wrap">
+              <h1>Customize Restricted Categories</h1>
+              <form method="post" action="options.php">
+                  <?php
+                  settings_fields( 'donasi-settings-group' );
+                  do_settings_sections( 'donasi-settings' );
+                  submit_button();
+                  ?>
+              </form>
+          </div>
+          <?php
+      }
+      
+      // Method to register settings
+      public function register_settings() {
+          // Register the new setting for restricted category groups
+          register_setting( 'donasi-settings-group', 'restricted_category_groups' );
+      
+          // Add a section in the admin settings page
+          add_settings_section(
+              'donasi-settings-section',
+              'Category Restriction Settings',
+              null,
+              'donasi-settings'
+          );
+
+          // Add the settings field for restricted category groups
+          add_settings_field(
+              'restricted_category_groups',
+              'Restricted Category Groups',
+              [ $this, 'restricted_categories_callback' ],
+              'donasi-settings',
+              'donasi-settings-section'
+          	);
+      	}
+
+		// Callback method to render the restricted categories settings field
+		public function restricted_categories_callback() {
+			// Get the current restricted groups from the settings
+			$restricted_groups = get_option( 'restricted_category_groups', [] );
+			// Get all product categories
+			$categories = get_terms( [
+				'taxonomy'   => 'product_cat',
+				'hide_empty' => false,
+			] );
+		
+			// Render the restricted category groups
+			echo '<div id="restricted-category-groups">';
+		
+			if ( !empty( $restricted_groups ) ) {
+				foreach ( $restricted_groups as $index => $group ) {
+					echo '<div class="restricted-group" data-index="' . esc_attr( $index ) . '">';
+					echo '<h4>Group ' . ( (int) $index + 1 ) . '</h4>';
+					echo $this->render_category_group( $group, $categories, $index );
+					echo '<button type="button" class="button delete-group">Delete Group</button>';
+					echo '</div>';
+				}
+			}
+		
+			echo '</div>';
+		
+			// Button to add new groups
+			echo '<button type="button" class="button" id="add-group">Add Group</button>';
+			echo '<script>
+				var groupIndex = ' . count($restricted_groups) . ';
+				jQuery("#add-group").click(function() {
+					groupIndex++;
+					jQuery("#restricted-category-groups").append(`<div class="restricted-group" data-index="${groupIndex}"><h4>Group ${groupIndex}</h4>` + ' . json_encode($this->render_category_group([], $categories, 'new')) . ' + `<button type="button" class="button delete-group">Delete Group</button></div>`);
+				});
+				jQuery(document).on("click", ".delete-group", function() {
+					jQuery(this).closest(".restricted-group").remove();
+				});
+			</script>';
+		}
+
+		// Method to render a single category group
+		public function render_category_group( $group, $categories, $index ) {
+			ob_start();
+			foreach ( $categories as $category ) {
+				?>
+				<label>
+					<input type="checkbox" name="restricted_category_groups[<?php echo esc_attr( $index ); ?>][]"
+						value="<?php echo esc_attr( $category->slug ); ?>"
+						<?php echo in_array( $category->slug, $group ) ? 'checked' : ''; ?>>
+					<?php echo esc_html( $category->name ); ?>
+				</label><br/>
+				<?php
+			}
+			return ob_get_clean();
+		}
+
+    }
+}

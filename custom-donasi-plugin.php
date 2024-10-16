@@ -25,6 +25,13 @@ require_once CUSTOM_DONASI_PLUGIN_PATH . 'includes/class-restricted-category-plu
 function custom_donasi_plugin_init() {
     $restricted_category_plugin = new Restricted_Category_Plugin();
     $restricted_category_plugin->run();
+
+    // Include admin script if in admin area
+    if ( is_admin() ) {
+        require_once CUSTOM_DONASI_PLUGIN_PATH . 'admin/class-restricted-category-plugin-admin.php';
+        $restricted_category_plugin_admin = new Restricted_Category_Plugin_Admin();
+        $restricted_category_plugin_admin->run();
+    }
 }
 add_action( 'plugins_loaded', 'custom_donasi_plugin_init' );
 
