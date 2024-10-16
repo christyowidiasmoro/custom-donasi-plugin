@@ -5,6 +5,8 @@ Description: Customizations for donasi.generasibaru.nl
 Version: 1.0
 Author: Christyowidiasmoro
 License: GPL2
+GitHub Plugin URI: https://github.com/christyowidiasmoro/custom-donasi-plugin
+GitHub Branch: master
 */
 
 // Prevent direct access to the file
