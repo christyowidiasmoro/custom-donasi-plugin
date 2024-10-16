@@ -1,12 +1,16 @@
 <?php
 
+// Check if the class 'Custom_Donasi_Plugin' does not already exist
 if ( !class_exists( 'Custom_Donasi_Plugin' ) ) {
+    // Define the 'Custom_Donasi_Plugin' class
     class Custom_Donasi_Plugin {
 
+        // Constructor method
         public function __construct() {
             // Constructor code here
         }
 
+        // Method to run the plugin
         public function run() {
             // Hook for frontend customizations
             add_action( 'wp_enqueue_scripts', [ $this, 'enqueue_frontend_scripts' ] );
@@ -14,35 +18,40 @@ if ( !class_exists( 'Custom_Donasi_Plugin' ) ) {
             // Hook for admin customizations
             add_action( 'admin_enqueue_scripts', [ $this, 'enqueue_admin_scripts' ] );
 
+            // Hook to restrict cart items based on categories
             add_action( 'woocommerce_check_cart_items', [ $this, 'restrict_cart_multiple_categories' ] );
 
+            // Hook to add admin menu
             add_action( 'admin_menu', [ $this, 'add_admin_menu' ] );
+
+            // Hook to register settings
             add_action( 'admin_init', [ $this, 'register_settings' ] );
         }
 
+        // Method to enqueue frontend styles and scripts
         public function enqueue_frontend_scripts() {
-            // Enqueue frontend styles and scripts
             wp_enqueue_style( 'custom-donasi-style', CUSTOM_DONASI_PLUGIN_URL . 'assets/css/style.css' );
             wp_enqueue_script( 'custom-donasi-script', CUSTOM_DONASI_PLUGIN_URL . 'assets/js/script.js', ['jquery'], false, true );
         }
 
+        // Method to enqueue admin panel styles and scripts
         public function enqueue_admin_scripts() {
-            // Enqueue admin panel styles and scripts
             wp_enqueue_style( 'custom-donasi-admin-style', CUSTOM_DONASI_PLUGIN_URL . 'assets/css/admin-style.css' );
             wp_enqueue_script( 'custom-donasi-admin-script', CUSTOM_DONASI_PLUGIN_URL . 'assets/js/admin-script.js', [], false, true );
         }
 
+        // Method to restrict cart items based on multiple categories
         public function restrict_cart_multiple_categories() {
             // Get restricted category groups from admin settings
             $restricted_groups = get_option( 'restricted_category_groups', [] );
         
+            // If there are no restricted groups, return
             if ( empty( $restricted_groups ) ) {
-                return; // No groups to restrict
+                return;
             }
         
             // Get all categories in the current cart
             $categories_in_cart = [];
-        
             foreach ( WC()->cart->get_cart() as $cart_item ) {
                 $product_id = $cart_item['product_id'];
                 $product_categories = wp_get_post_terms( $product_id, 'product_cat', [ 'fields' => 'slugs' ] );
@@ -62,6 +71,7 @@ if ( !class_exists( 'Custom_Donasi_Plugin' ) ) {
             }
         }                
 
+        // Method to add admin menu
         public function add_admin_menu() {
             add_menu_page(
                 'Restricted Categories',         // Page title
@@ -74,6 +84,7 @@ if ( !class_exists( 'Custom_Donasi_Plugin' ) ) {
             );
         }
 
+        // Method to render the admin settings page
         public function admin_settings_page() {
             ?>
             <div class="wrap">
@@ -89,6 +100,7 @@ if ( !class_exists( 'Custom_Donasi_Plugin' ) ) {
             <?php
         }
         
+        // Method to register settings
         public function register_settings() {
             // Register the new setting for restricted category groups
             register_setting( 'donasi-settings-group', 'restricted_category_groups' );
@@ -111,13 +123,17 @@ if ( !class_exists( 'Custom_Donasi_Plugin' ) ) {
             );
         }
 
+        // Callback method to render the restricted categories settings field
         public function restricted_categories_callback() {
+            // Get the current restricted groups from the settings
             $restricted_groups = get_option( 'restricted_category_groups', [] );
+            // Get all product categories
             $categories = get_terms( [
                 'taxonomy'   => 'product_cat',
                 'hide_empty' => false,
             ] );
         
+            // Render the restricted category groups
             echo '<div id="restricted-category-groups">';
         
             if ( !empty( $restricted_groups ) ) {
@@ -146,6 +162,7 @@ if ( !class_exists( 'Custom_Donasi_Plugin' ) ) {
             </script>';
         }
 
+        // Method to render a single category group
         public function render_category_group( $group, $categories, $index ) {
             ob_start();
             foreach ( $categories as $category ) {
@@ -161,6 +178,5 @@ if ( !class_exists( 'Custom_Donasi_Plugin' ) ) {
             return ob_get_clean();
         }
         
-                
     }
 }
