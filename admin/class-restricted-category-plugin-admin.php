@@ -14,10 +14,7 @@ if ( !class_exists( 'Restricted_Category_Plugin_Admin' ) ) {
         public function run() {
             // Hook for admin customizations
             add_action( 'admin_enqueue_scripts', [ $this, 'enqueue_admin_scripts' ] );
-
-            // Hook to add admin menu
-            add_action( 'admin_menu', [ $this, 'add_admin_menu' ] );
-
+			
             // Hook to register settings
             add_action( 'admin_init', [ $this, 'register_settings' ] );
 
@@ -30,24 +27,12 @@ if ( !class_exists( 'Restricted_Category_Plugin_Admin' ) ) {
             wp_enqueue_style( 'restricted-category-admin-style', plugin_dir_url( __FILE__ ) . '../assets/css/admin-style.css' );
             wp_enqueue_script( 'restricted-category-admin-script', plugin_dir_url( __FILE__ ) . '../assets/js/admin-script.js', [], false, true );
         }
-        // Method to add admin menu
-        public function add_admin_menu() {
-            add_menu_page(
-                'Restricted Categories',         // Page title
-                'Donasi Settings',               // Menu title
-                'manage_options',                // Capability
-                'donasi-settings',               // Menu slug
-                [ $this, 'admin_settings_page' ], // Callback function
-                'dashicons-admin-generic',       // Icon
-                60                               // Position
-            );
-        }
 
 		// Method to render the admin settings page
-		public function admin_settings_page() {
+		public function category_plugin_admin_page() {
 			?>
 			<div class="wrap">
-				<h1>Customize Restricted Categories</h1>
+				<h1>Custom Product Rules</h1>
 				<form method="post" action="options.php">
 					<?php
 					settings_fields( 'donasi-settings-group' );
@@ -58,33 +43,35 @@ if ( !class_exists( 'Restricted_Category_Plugin_Admin' ) ) {
 				<form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
 					<input type="hidden" name="action" value="reset_plugin_settings">
 					<?php wp_nonce_field('reset_plugin_settings_nonce', 'reset_plugin_settings_nonce_field'); ?>
-					<button type="submit" class="button button-secondary">Reset Restricted Category Groups</button>
+					<button type="submit" class="button button-secondary">Reset Options</button>
 				</form>
 			</div>
 			<?php
 		}
       
-      // Method to register settings
-      public function register_settings() {
-          // Register the new setting for restricted category groups
-          register_setting( 'donasi-settings-group', 'restricted_category_groups' );
-      
-          // Add a section in the admin settings page
-          add_settings_section(
-              'donasi-settings-section',
-              'Category Restriction Settings',
-              null,
-              'donasi-settings'
-          );
+		// Method to register settings
+		public function register_settings() {
+			// Register the new setting for restricted category groups
+			register_setting( 'donasi-settings-group', 'restricted_category_groups' );
+		
+			// Add a section in the admin settings page
+			add_settings_section(
+				'donasi-settings-section',
+				'Category Restrictions',
+				function() {
+					echo '<p>Do not allowed to mix product categories in the same group.</p>';
+				},
+				'donasi-settings'
+			);
 
-          // Add the settings field for restricted category groups
-          add_settings_field(
-              'restricted_category_groups',
-              'Restricted Category Groups',
-              [ $this, 'restricted_categories_callback' ],
-              'donasi-settings',
-              'donasi-settings-section'
-          	);
+			// Add the settings field for restricted category groups
+			add_settings_field(
+				'restricted_category_groups',
+				'Category Groups',
+				[ $this, 'restricted_categories_callback' ],
+				'donasi-settings',
+				'donasi-settings-section'
+			);
       	}
 
 		// Callback method to render the restricted categories settings field
