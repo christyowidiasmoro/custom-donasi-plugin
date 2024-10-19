@@ -21,6 +21,7 @@ define( 'CUSTOM_DONASI_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 // Include required files
 require_once CUSTOM_DONASI_PLUGIN_PATH . 'includes/class-restricted-category-plugin.php';
 require_once CUSTOM_DONASI_PLUGIN_PATH . 'includes/class-restricted-payment-gateway-plugin.php';
+require_once CUSTOM_DONASI_PLUGIN_PATH . 'includes/class-open-price-product-plugin.php';
 
 // Initialize the plugin
 function custom_donasi_plugin_init() {
@@ -29,6 +30,9 @@ function custom_donasi_plugin_init() {
     
     $restricted_payment_gateway_plugin = new Restricted_Payment_Gateway_Plugin();
     $restricted_payment_gateway_plugin->run();
+
+    $open_price_product_plugin = new Open_Price_Product_Plugin();
+    $open_price_product_plugin->run();
 
     // Include admin script if in admin area
     if ( is_admin() ) {
@@ -39,6 +43,10 @@ function custom_donasi_plugin_init() {
         require_once CUSTOM_DONASI_PLUGIN_PATH . 'admin/class-restricted-payment-gateway-plugin-admin.php';
         $restricted_payment_gateway_plugin_admin = new Restricted_Payment_Gateway_Plugin_Admin();
         $restricted_payment_gateway_plugin_admin->run();
+
+        require_once CUSTOM_DONASI_PLUGIN_PATH . 'admin/class-open-price-product-plugin-admin.php';
+        $open_price_product_plugin_admin = new Open_Price_Product_Plugin_Admin();
+        $open_price_product_plugin_admin->run();
 
         require_once CUSTOM_DONASI_PLUGIN_PATH . 'admin/class-custom-plugin-admin.php';
         $custom_plugin_admin = new Custom_Plugin_Admin(
