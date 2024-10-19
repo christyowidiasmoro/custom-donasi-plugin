@@ -50,7 +50,7 @@ if ( !class_exists( 'Open_Price_Product_Plugin' ) ) {
           if ( $enable_open_price === 'yes' ) {
             return true;
           }
-          return;
+          return $return;
         }      
 
         // Add custom price input field on the product page
