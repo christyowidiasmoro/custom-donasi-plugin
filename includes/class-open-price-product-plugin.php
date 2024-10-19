@@ -60,6 +60,7 @@ if ( !class_exists( 'Open_Price_Product_Plugin' ) ) {
           $min_open_price = get_post_meta( $product->get_id(), '_min_open_price', true );
           $max_open_price = get_post_meta( $product->get_id(), '_max_open_price', true );
           $regular_price = $product->get_regular_price();
+          $currency_label_open_price = get_post_meta( $product->get_id(), '_currency_label_open_price', true );
           $label_open_price = get_post_meta( $product->get_id(), '_label_open_price', true );
 
           if ( $enable_open_price === 'yes' ) {
@@ -72,12 +73,12 @@ if ( !class_exists( 'Open_Price_Product_Plugin' ) ) {
                         display: inline-block;
                     }
                     .input-price-donasi input {
-                        padding-left: 30px !important;
+                        padding-left: ' . ( 10 + strlen(esc_attr($currency_label_open_price)) * 15) . 'px !important;
                     }
                     .input-price-donasi:before {
                         position: absolute;
                         top: 25%;
-                        content:"€";
+                        content:"' . esc_attr( $currency_label_open_price ) . '";
                         left: 10px;
                     }
               </style>';

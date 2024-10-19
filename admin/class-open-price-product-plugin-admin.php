@@ -51,6 +51,18 @@ if ( !class_exists( 'Open_Price_Product_Plugin_Admin' ) ) {
                 )
             ) );
 
+            // Currency Label for Open Price
+            woocommerce_wp_text_input( array(
+                'id'            => '_currency_label_open_price',
+                'label'         => __( 'Currency Label', 'woocommerce' ),
+                'description'   => __( 'Set the currency label for the open price feature.', 'woocommerce' ),
+                'type'          => 'text',
+                'placeholder'   => 'Enter your currency',
+                'custom_attributes' => array(
+                    'maxlength' => '3'
+                )
+            ) );
+
             // Label for Open Price
             $label_open_price = get_post_meta( get_the_ID(), '_label_open_price', true );
             woocommerce_wp_text_input( array(
@@ -75,6 +87,10 @@ if ( !class_exists( 'Open_Price_Product_Plugin_Admin' ) ) {
 
             if ( isset( $_POST['_max_open_price'] ) ) {
                 update_post_meta( $post_id, '_max_open_price', sanitize_text_field( $_POST['_max_open_price'] ) );
+            }
+
+            if ( isset( $_POST['_currency_label_open_price'] ) ) {
+                update_post_meta( $post_id, '_currency_label_open_price', sanitize_text_field( $_POST['_currency_label_open_price'] ) );
             }
 
             if ( isset( $_POST['_label_open_price'] ) ) {

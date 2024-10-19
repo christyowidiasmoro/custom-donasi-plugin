@@ -11,42 +11,9 @@ if ( !class_exists( 'Restricted_Payment_Gateway_Plugin_Admin' ) ) {
 
 		// Method to run the admin plugin
 		public function run() {
-			add_action( 'admin_init', array( $this, 'register_settings' ) );
-
 			add_action( 'add_meta_boxes', [ $this, 'add_meta_box' ] );
+            
             add_action( 'save_post', [ $this, 'save_meta_box_data' ] );
-		}
-
-		// Method to render the admin settings page
-		public function payment_gateway_plugin_admin_page() {
-			?>
-			<div class="wrap">
-				<h1>Custom Product Payment Rules</h1>
-				<form method="post" action="options.php">
-					<?php
-					settings_fields( 'restricted-payment-gateway' );
-					do_settings_sections( 'restricted-payment-gateway' );
-					submit_button();
-					?>
-				</form>
-			</div>
-			<?php
-		}
-
-		public function register_settings() {
-			// Register the new setting for restricted category groups
-			register_setting( 'restricted-payment-gateway', 'restricted_payment_gateway' );
-
-			register_setting( 'restrictedPaymentGateway', 'restricted_payment_gateway_settings' );
-
-			add_settings_section(
-				'restricted_payment_gateway_section',
-				__( 'Payment Gateway Settings', 'restricted-payment-gateway' ),
-				function() {
-					echo __( 'Configure the settings directly in product page.', 'restricted-payment-gateway' );
-				},
-				'restricted-payment-gateway'
-			);
 		}
 
 		public function add_meta_box() {
