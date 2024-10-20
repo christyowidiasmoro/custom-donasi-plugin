@@ -133,14 +133,16 @@ if ( !class_exists( 'Open_Price_Product_Plugin' ) ) {
 		function change_woocommerce_currency( $currency ) {
 			global $post;
 			if ($post) {
-				if ( is_cart() || is_checkout() ) {
+				if ( is_cart() || is_checkout() || is_wc_endpoint_url( ) ) {
 					$products = WC()->cart->get_cart_contents();
 					$product = array_pop($products);
-					$postmeta = get_post_meta($product['product_id']);
-					$currency_label_open_price = is_array($postmeta) && array_key_exists("_currency_label_open_price", $postmeta) ? $postmeta["_currency_label_open_price"][0] : "";
+					if ( !empty( $product ) ) {
+						$postmeta = get_post_meta($product['product_id']);
+						$currency_label_open_price = is_array($postmeta) && array_key_exists("_currency_label_open_price", $postmeta) ? $postmeta["_currency_label_open_price"][0] : "";
 
-					if ( !empty( $currency_label_open_price ) ) {
-						return $currency_label_open_price;
+						if ( !empty( $currency_label_open_price ) ) {
+							return $currency_label_open_price;
+						}
 					}
 				}
 			}
