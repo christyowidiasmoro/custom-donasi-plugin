@@ -5,16 +5,16 @@ if ( !class_exists( 'Custom_Plugin_Admin' ) ) {
     // Define the 'Custom_Plugin_Admin' class
     class Custom_Plugin_Admin {
 		private $restricted_category_plugin_admin;
-		private $restricted_payment_gateway_plugin_admin;
+		private $mollie_subscription_payment_plugin_admin;
 
         // Constructor method
         public function __construct(
 			$restricted_category_plugin_admin,
-			$restricted_payment_gateway_plugin_admin
+			$mollie_subscription_payment_plugin_admin
 		) {
             // Constructor code here
 			$this->restricted_category_plugin_admin = $restricted_category_plugin_admin;
-			$this->restricted_payment_gateway_plugin_admin = $restricted_payment_gateway_plugin_admin;
+			$this->mollie_subscription_payment_plugin_admin = $mollie_subscription_payment_plugin_admin;
         }
 
         // Method to run the admin plugin
@@ -30,7 +30,7 @@ if ( !class_exists( 'Custom_Plugin_Admin' ) ) {
 				'Custom Donasi',                 // Menu title
 				'manage_options',                // Capability
 				'custom-donasi-settings',        // Menu slug
-				[ $this->restricted_category_plugin_admin, 'category_plugin_admin_page' ], // Callback function
+				null, // Callback function
 				'dashicons-admin-generic',       // Icon
 				60                               // Position
 			);
@@ -38,7 +38,7 @@ if ( !class_exists( 'Custom_Plugin_Admin' ) ) {
 			add_submenu_page(
 				'custom-donasi-settings',		 // Parent slug
 				'Custom Product Rules Options',	 // Page title
-				'Custom Product Rules',          // Menu title
+				'Product Rules',          // Menu title
 				'manage_options',                // Capability
 				'custom-donasi-settings',		 // Menu slug
 				[ $this->restricted_category_plugin_admin, 'category_plugin_admin_page' ] // Callback function
@@ -47,10 +47,10 @@ if ( !class_exists( 'Custom_Plugin_Admin' ) ) {
 			add_submenu_page(
 				'custom-donasi-settings',			// Parent slug
 				'Custom Payment Gateway Options',   // Page title
-				'Custom Payment Gateway',    		// Menu title
+				'Payment Gateway',    		// Menu title
 				'manage_options',                	// Capability
 				'custom-payment-gateway',    		// Menu slug
-				[ $this->restricted_payment_gateway_plugin_admin, 'payment_gateway_plugin_admin_page' ] // Callback function
+				[ $this->mollie_subscription_payment_plugin_admin, 'mollie_subscription_payment_plugin_admin_page' ] // Callback function
 			);
 		}    
     }

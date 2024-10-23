@@ -14,8 +14,10 @@ if ( !class_exists( 'Open_Price_Product_Plugin' ) ) {
         public function run() {
             // Hook for frontend customizations
             add_action( 'wp_enqueue_scripts', [ $this, 'enqueue_frontend_scripts' ] );
-
-            add_filter( 'woocommerce_get_price_html',             array( $this, 'hide_original_price' ), PHP_INT_MAX, 2 );
+						
+						add_filter( 'woocommerce_product_get_price',          array( $this, 'get_open_price' ), PHP_INT_MAX, 2 );
+						
+						add_filter( 'woocommerce_get_price_html',             array( $this, 'hide_original_price' ), PHP_INT_MAX, 2 );
 
             add_filter( 'woocommerce_get_variation_price_html',   array( $this, 'hide_original_price' ), PHP_INT_MAX, 2 );
 
@@ -30,7 +32,6 @@ if ( !class_exists( 'Open_Price_Product_Plugin' ) ) {
             add_action( 'woocommerce_before_calculate_totals', [ $this, 'custom_donasi_set_custom_price' ] );
 
             add_filter( 'woocommerce_currency', [ $this, 'change_woocommerce_currency' ] );
-
         }
 
         // Method to enqueue frontend styles and scripts
@@ -38,6 +39,26 @@ if ( !class_exists( 'Open_Price_Product_Plugin' ) ) {
             wp_enqueue_style( 'open-price-product-style', plugin_dir_url( __FILE__ ) . 'assets/css/style.css' );
             wp_enqueue_script( 'open-price-product-script', plugin_dir_url( __FILE__ ) . 'assets/js/script.js', ['jquery'], false, true );
         }
+
+		function get_open_price( $price, $_product ) {
+			$enable_open_price = get_post_meta( $_product->get_id(), '_enable_open_price', true );
+			if ( $enable_open_price === 'yes' ) {
+				// TODO: get price from cart item data
+
+				// get current order
+				// $order = wc_get_order();
+
+				// get first item in the order
+				// $items = $order->get_items();
+				// $item = array_pop($items);
+
+				// get custom_price from cart_item_data
+				// $custom_price = $item['custom_price'];
+
+				// $price = wc_price( $custom_price );
+			}
+			return $price;
+		}
 
         function hide_original_price( $price, $_product ) {
 			$enable_open_price = get_post_meta( $_product->get_id(), '_enable_open_price', true );
@@ -115,8 +136,6 @@ if ( !class_exists( 'Open_Price_Product_Plugin' ) ) {
 			if ( isset( $_POST['custom_price'] ) ) {
 				$cart_item_data['custom_price'] = $_POST['custom_price'];
 				$cart_item_data['unique_key'] = md5( microtime().rand() ); // Ensure unique key for each item
-
-				$currency_label_open_price = get_post_meta( $product_id, '_currency_label_open_price', true );
 			}
 			return $cart_item_data;
 		}

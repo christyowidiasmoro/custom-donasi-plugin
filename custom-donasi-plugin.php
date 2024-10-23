@@ -22,6 +22,7 @@ define( 'CUSTOM_DONASI_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 require_once CUSTOM_DONASI_PLUGIN_PATH . 'includes/class-restricted-category-plugin.php';
 require_once CUSTOM_DONASI_PLUGIN_PATH . 'includes/class-restricted-payment-gateway-plugin.php';
 require_once CUSTOM_DONASI_PLUGIN_PATH . 'includes/class-open-price-product-plugin.php';
+require_once CUSTOM_DONASI_PLUGIN_PATH . 'includes/class-mollie-subscription-payment-plugin.php';
 
 // Initialize the plugin
 function custom_donasi_plugin_init() {
@@ -33,6 +34,9 @@ function custom_donasi_plugin_init() {
 
     $open_price_product_plugin = new Open_Price_Product_Plugin();
     $open_price_product_plugin->run();
+
+    $mollie_subscription_payment_plugin = new Mollie_Subscription_Payment_Plugin();
+    $mollie_subscription_payment_plugin->run();
 
     // Include admin script if in admin area
     if ( is_admin() ) {
@@ -48,10 +52,14 @@ function custom_donasi_plugin_init() {
         $open_price_product_plugin_admin = new Open_Price_Product_Plugin_Admin();
         $open_price_product_plugin_admin->run();
 
+        require_once CUSTOM_DONASI_PLUGIN_PATH . 'admin/class-mollie-subscription-payment-plugin-admin.php';
+        $mollie_subscription_payment_plugin_admin = new Mollie_Subscription_Payment_Plugin_Admin();
+        $mollie_subscription_payment_plugin_admin->run();
+
         require_once CUSTOM_DONASI_PLUGIN_PATH . 'admin/class-custom-plugin-admin.php';
         $custom_plugin_admin = new Custom_Plugin_Admin(
             $restricted_category_plugin_admin,
-            $restricted_payment_gateway_plugin_admin
+            $mollie_subscription_payment_plugin_admin
         );
         $custom_plugin_admin->run();
     }
