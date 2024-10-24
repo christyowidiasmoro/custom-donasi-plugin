@@ -74,40 +74,47 @@ if ( ! class_exists( 'WC_Gateway_Mollie_Subscription' ) ) {
 			// create first payment as a mandate
 			$payment = $this->create_first_payment( $mollie, $order, $customer );
 
-			if ( $payment->isPaid() ) {
+			// if ( $payment->isPaid() ) {
 				return ['result' => 'success', 'redirect' => $payment->getCheckoutUrl() ];
-			} else {
-				return ['result' => 'failure', 'message' => 'Payment failed.'];
-			}
+			// } else {
+				// return ['result' => 'failure', 'message' => 'Payment failed.'];
+			// }
 		}
 		
 		public function webhook() {
 			// Webhook test by Mollie
 			if (isset($_GET['testByMollie'])) {
-				$this->logger->debug(__METHOD__ . ': Webhook tested by Mollie.', [\true]);
+				error_log(__METHOD__ . ': Webhook tested by Mollie.');
 				return;
 			}
-			if (empty($_GET['order_id']) || empty($_GET['key'])) {
-				$this->httpResponse->setHttpResponseCode(400);
-				$this->logger->debug(__METHOD__ . ":  No order ID or order key provided.");
+			if (empty($_GET['order_id']) || empty($_GET['key']) || empty($_GET['filter_flag']) ) {
+				http_response_code(400);
+				error_log(__METHOD__ . ":  No order ID or order key or flag provided.");
 				return;
 			}
+			
 			$order_id = sanitize_text_field(wp_unslash($_GET['order_id']));
 			$key = sanitize_text_field(wp_unslash($_GET['key']));
+			$filter_flag = sanitize_text_field(wp_unslash($_GET['filter_flag']));
 			// $data_helper = $this->data;
 			$order = wc_get_order($order_id);
 			if (!$order instanceof WC_Order) {
-				$this->httpResponse->setHttpResponseCode(404);
-				$this->logger->debug(__METHOD__ . ":  Could not find order {$order_id}.");
+				http_response_code(404);
+				error_log(__METHOD__ . ":  Could not find order {$order_id}.");
 				return;
 			}
 			if (!$order->key_is_valid($key)) {
-				$this->httpResponse->setHttpResponseCode(401);
-				$this->logger->debug(__METHOD__ . ":  Invalid key {$key} for order {$order_id}.");
+				http_response_code(401);
+				error_log(__METHOD__ . ":  Invalid key {$key} for order {$order_id}.");
 				return;
 			}
 			$gateway = wc_get_payment_gateway_by_order($order);
 			if (!$gateway instanceof WC_Gateway_Mollie_Subscription) {
+				return;
+			}
+			if ($filter_flag !== "first_payment") {
+				http_response_code(404);
+				error_log(__METHOD__ . ":  Not valid filter flag {$filter_flag} for order {$order_id}.");
 				return;
 			}
 			// $this->setGateway($gateway);
@@ -118,8 +125,8 @@ if ( ! class_exists( 'WC_Gateway_Mollie_Subscription' ) ) {
 			$paymentId = filter_input(\INPUT_POST, 'id', \FILTER_SANITIZE_SPECIAL_CHARS);
 			// No Mollie payment id provided
 			if (empty($paymentId)) {
-				$this->httpResponse->setHttpResponseCode(400);
-				$this->logger->debug(__METHOD__ . ': No payment object ID provided.', [\true]);
+				http_response_code(400);
+				error_log(__METHOD__ . ': No payment object ID provided.');
 				return;
 			}
 			$payment_object_id = sanitize_text_field(wp_unslash($paymentId));
@@ -128,37 +135,44 @@ if ( ! class_exists( 'WC_Gateway_Mollie_Subscription' ) ) {
 
 			// Payment not found
 			if (!$payment) {
-				$this->httpResponse->setHttpResponseCode(404);
-				$this->logger->debug(__METHOD__ . ": payment object {$payment_object_id} not found.", [\true]);
+				http_response_code(404);
+				error_log( __METHOD__ . ": payment object {$payment_object_id} not found." );
 				return;
 			}
 			if ($order_id != $payment->metadata->order_id) {
-				$this->httpResponse->setHttpResponseCode(400);
-				$this->logger->debug(__METHOD__ . ": Order ID does not match order_id in payment metadata. Payment ID {$payment->id}, order ID {$order_id}");
+				http_response_code(400);
+				error_log(__METHOD__ . ": Order ID does not match order_id in payment metadata. Payment ID {$payment->id}, order ID {$order_id}");
 				return;
 			}
 			if (!$payment->customerId) {
-				$this->httpResponse->setHttpResponseCode(404);
-				$this->logger->debug(__METHOD__ . ": customer object for payment {$payment_object_id} not found.", [\true]);
+				http_response_code(404);
+				error_log(__METHOD__ . ": customer object for payment {$payment_object_id} not found.");
 				return;
 			}
-
-			// Log a message that webhook was called, doesn't mean the payment is actually processed
-			$this->logger->debug(__METHOD__ . ": Mollie Subscription payment object {$payment->id} (" . $payment->mode . ") webhook call for order {$order->get_id()}.", [\true]);
 
 			// get customer from payment
 			$customer = $mollie->customers->get($payment->customerId);
 			if (!$customer->hasValidMandate()) {
-				$this->httpResponse->setHttpResponseCode(404);
-				$this->logger->debug(__METHOD__ . ": customer {$payment->customerId} do not a valid mandate.", [\true]);
+				http_response_code(404);
+				error_log(__METHOD__ . ": customer {$payment->customerId} do not has a valid mandate.");
+				error_log(__METHOD__ . json_encode($customer->mandates()));
 				return;
 			}
+			
+			error_log(__METHOD__ . ": payment object {$payment->id} (" . $payment->mode . ") webhook call for order {$order->get_id()} for customer {$customer->id}.");
 
-			$subscription = $this->create_recurring_payment( $order, $customer );
-			if (!$subscription) {
-				$this->httpResponse->setHttpResponseCode(404);
-				$this->logger->debug(__METHOD__ . ": subscription not created.", [\true]);
-				return;
+			try {
+				$subscription = $this->create_recurring_payment( $order, $customer );
+				
+				if (!$subscription) {
+					http_response_code(404);
+					error_log(__METHOD__ . ": subscription not created.");
+					return;
+				}
+				error_log(__METHOD__ . ": subscription id {$subscription->id} (" . $subscription->status . ") webhook call for order {$order->get_id()}.");
+
+			} catch (Exception $e) {
+				error_log(__METHOD__ . ":" . $e->getPlainMessage());
 			}
 
 			// Status 200
@@ -186,7 +200,7 @@ if ( ! class_exists( 'WC_Gateway_Mollie_Subscription' ) ) {
 			$payment = $mollie->payments->create([
 				'amount' => [
 					'currency' => 'EUR',
-					'value' => '0.36',
+					'value' => '0.39',
 				],
 				'customerId' => $customer->id,
 				'sequenceType' => 'first',
@@ -212,27 +226,34 @@ if ( ! class_exists( 'WC_Gateway_Mollie_Subscription' ) ) {
 					$description = $product->get_meta( '_mollie_subscription_description' );
 					break;
 				}
-			}
+			}			
+			error_log(__METHOD__ . ": {$customer->hasValidMandate()}, {$interval}, {$intervalCount},  {$startTime}, {$description}.");
 
 			if ($customer->hasValidMandate() && $interval && $intervalCount && $startTime) {
 				$startDate = date('Y-m-d', strtotime($startTime));
+				$valueAmount = strval( floatval( $order->get_total() ) + 0.31);
 		
+				error_log(__METHOD__ . ": create subscription: {$startDate}, {$valueAmount}.");
 				$subscription = $customer->createSubscription([
 					"amount" => [
 						"currency" => "EUR",
-						"value" => $order->get_total(),
+						"value" => $valueAmount,
 					],
 					"times" => $intervalCount,
 					"interval" => $interval,
 					"startDate" => $startDate,
 					"description" => ( !empty($description) ) ? $description : 'Subscription for order #'.$order->get_id(),
-					"webhookUrl" => home_url('/wc-api/mollie_subscription/'),
+					// TODO: webhook to track the subscription payment
+					// "webhookUrl" => home_url('/wc-api/mollie_subscription/'),
 					"metadata" => [
 						"order_id" => $order->get_id(),
 					]
 				]);
+				error_log(__METHOD__ . ": create subscription id {$subscription->id}.");
+				
 				return $subscription;
 			}
+			error_log(__METHOD__ . ": create subscription null.");
 
 			return \null;
 		}

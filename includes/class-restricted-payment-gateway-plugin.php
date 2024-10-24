@@ -34,6 +34,10 @@ if ( !class_exists( 'Restricted_Payment_Gateway_Plugin' ) ) {
             // Check if any product in the cart has a restricted payment gateway
             $product_in_cart = false;
             $allowed_gateway_id = '';
+			
+			if ( empty( WC() ) || empty( WC()->cart ) ) {
+				return $available_gateways;
+			}
 
             foreach ( WC()->cart->get_cart() as $cart_item ) {
                 $product_id = $cart_item['product_id'];
